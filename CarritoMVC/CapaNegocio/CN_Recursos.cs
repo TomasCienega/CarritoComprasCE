@@ -22,6 +22,8 @@ namespace CapaNegocio
         //ENCRIPTACION DE TEXTO EN SHA256
         public static string ConvertirSha256(string texto)
         {
+            if (string.IsNullOrEmpty(texto)) return "";
+
             StringBuilder sb = new StringBuilder();
             //USAR LA REFERENCIA DE "System.Security.Cryptography"
             using (SHA256 hash = SHA256Managed.Create())
@@ -60,11 +62,28 @@ namespace CapaNegocio
                 smtp.Send(mail);
                 resultado = true;
             }
-            catch (Exception e)
+            catch
             {
                 resultado = false;
             }
             return resultado;
+        }
+
+        public static string ConvertitBase64(string ruta, out bool conversion)
+        {
+            string textoBase64 = string.Empty;
+            conversion = true;
+
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(ruta);
+                textoBase64 = Convert.ToBase64String(bytes);
+            }
+            catch
+            {
+                conversion = false;
+            }
+            return textoBase64;
         }
     }
 }

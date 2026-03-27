@@ -51,6 +51,8 @@ C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\Ca
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\roslyn\VBCSCompiler.exe
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\roslyn\VBCSCompiler.exe.config
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Antlr3.Runtime.dll
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaEntidad.dll
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaNegocio.dll
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Microsoft.Web.Infrastructure.dll
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Newtonsoft.Json.dll
@@ -62,6 +64,9 @@ C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\Ca
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\System.Web.WebPages.dll
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\System.Web.WebPages.Razor.dll
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\WebGrease.dll
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaDatos.dll
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaEntidad.pdb
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaNegocio.pdb
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\System.Web.Helpers.xml
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\System.Web.Mvc.xml
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\System.Web.Optimization.xml
@@ -72,6 +77,7 @@ C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\Ca
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Newtonsoft.Json.xml
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Antlr3.Runtime.pdb
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.xml
+C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\bin\CapaDatos.pdb
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\obj\Debug\CapaPresentacionTienda.csproj.AssemblyReference.cache
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\obj\Debug\CapaPresentacionTienda.csproj.CoreCompileInputs.cache
 C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\CarritoMVC\CapaPresentacionTienda\obj\Debug\CapaPres.0F0FCBD9.Up2Date

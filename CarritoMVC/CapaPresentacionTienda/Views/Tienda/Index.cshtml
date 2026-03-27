@@ -1,0 +1,202 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Header-->
+<header class="bg-dark py-5">
+    <div class="container px-4 px-lg-5 my-5">
+        <div class="text-center text-white">
+            <h1 class="display-4 fw-bolder">Compra con estilo</h1>
+            <p class="lead fw-normal text-white-50 mb-0">Encuentra los mejores productos</p>
+        </div>
+    </div>
+</header>
+<!-- Section-->
+<section>
+    <div class="container-fluid px-5 my-5">
+
+        <div class="row">
+
+            <div class="col-sm-3">
+
+                <div class="row mb-3">
+                    <div class="col-sm-12">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                Categorias
+                            </div>
+                            <div id="contenedor_categoria" class="card-body">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-12">
+                        <div class="card">
+                            <div class="card-header bg-dark text-white">
+                                Marcas
+                            </div>
+                            <div id="contenedor_marca" class="card-body">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-12">
+                        <div class="d-grid gap-2">
+                            <button id="btnAplicarFiltro" class="btn btn-outline-dark" type="button">
+                                <i class="fas fa-filter"></i> Aplicar Filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-9">
+                <div id="contenedor_producto" class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section scripts{
+
+    <script>
+
+        $(document).ready(function () {
+            MostrarCategorias();
+            MostrarProductos(0, 0)
+        });
+
+        function MostrarCategorias() {
+            jQuery.ajax({
+                url: "@Url.Action("ListaCategorias", "Tienda")",
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (response) {
+                    $("#contenedor_categoria").LoadingOverlay("hide");
+                    $("#contenedor_categoria").empty(); // <--- LIMPIAR SIEMPRE
+
+                    // Opción "Todos"
+                    $("<div>").addClass("form-check").append(
+                        $("<input>").addClass("form-check-input").attr({ "type": "radio", "name": "Categoria", "value": "0", "id": "cx", "checked": "checked" }),
+                        $("<label>").addClass("form-check-label").text("Todos").attr({ "for": "cx" })
+                    ).appendTo("#contenedor_categoria");
+
+                    $.each(response.data, function (i, element) {
+                        $("<div>").addClass("form-check").append(
+                            $("<input>").addClass("form-check-input").attr({ "type": "radio", "name": "Categoria", "value": element.IdCategoria, "id": "c" + i }),
+                            $("<label>").addClass("form-check-label").text(element.Descripcion).attr({ "for": "c" + i })
+                        ).appendTo("#contenedor_categoria");
+                    });
+
+                    // Llamamos a marcas una vez que las categorías ya existen en el HTML
+                    MostrarMarcas();
+                },
+                beforeSend: function () {
+                    $("#contenedor_categoria").LoadingOverlay("show");
+                }
+            });
+        }
+
+        function MostrarMarcas() {
+            // Buscamos el valor del radio seleccionado
+            var _IdCategoria = $("input[name=Categoria]:checked").val();
+
+            jQuery.ajax({
+                url: "@Url.Action("ListaMarcasPorCategorias", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdCategoria: _IdCategoria }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (response) {
+                    $("#contenedor_marca").html("");
+                    $("#contenedor_marca").LoadingOverlay("hide");
+                    // No es necesario empty aquí porque ya lo hicimos en beforeSend
+
+                    $("<div>").addClass("form-check").append(
+                        $("<input>").addClass("form-check-input").attr({ "type": "radio", "name": "Marca", "value": "0", "id": "mx", "checked": "checked" }),
+                        $("<label>").addClass("form-check-label").text("Todos").attr({ "for": "mx" })
+                    ).appendTo("#contenedor_marca");
+
+                    $.each(response.data, function (i, element) {
+                        $("<div>").addClass("form-check").append(
+                            $("<input>").addClass("form-check-input").attr({ "type": "radio", "name": "Marca", "value": element.IdMarca, "id": "m" + i }),
+                            $("<label>").addClass("form-check-label").text(element.Descripcion).attr({ "for": "m" + i })
+                        ).appendTo("#contenedor_marca");
+                    });
+                },
+                beforeSend: function () {
+                    $("#contenedor_marca").empty(); // <--- LIMPIAR ANTES DE MOSTRAR CARGA
+                    $("#contenedor_marca").LoadingOverlay("show");
+                }
+            });
+        }
+
+        $(document).on("change", "input[name=Categoria]", function () {
+            MostrarMarcas();
+        })
+
+        function MostrarProductos(_IdCategoria,_IdMarca) {
+
+            jQuery.ajax({
+                url: "@Url.Action("ListarProducto", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdCategoria: _IdCategoria, IdMarca: _IdMarca }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (response) {
+                    $("#contenedor_producto").html("");
+                    $("#contenedor_producto").LoadingOverlay("hide");
+
+
+                    $.each(response.data, function (i, element) {
+                        $("<div>").addClass("col mb-5").append(
+                            $("<div>").addClass("card h-100").append(
+                                $("<img>").addClass("card-img-top").attr({ "src": "data:image/" + element.Extension + ";base64," + element.Base64 }),
+                                $("<div>").addClass("card-body p-4").append(
+                                    $("<div>").addClass("text-center").append(
+                                        $("<h5>").addClass("fw-bolder").text(element.Nombre),
+                                        "$ " + element.Precio.toFixed(2) +"USD"
+                                    )
+                                ), $("<div>").addClass("card-footer p-4 pt-0 border-top-0 bg-transparent").append(
+
+                                    $("<div>").addClass("d-grid gap-2").append(
+                                        @if (Session["Cliente"] != null) {
+                                            @:$("<button>").addClass("btn btn-success mt-auto AgregarCarrito").data("IdProducto", element.IdProducto).text("Agregar al Carrito"),
+                                        }
+
+                                        $("<a>").addClass("btn btn-dark mt-auto")
+                                            .attr({ "href": "@Url.Action("DetalleProducto","Tienda")" + "?IdProducto=" + element.IdProducto })
+                                            .text("Ver Detalle")
+                                    )
+
+                                )
+                            )
+                        ).appendTo("#contenedor_producto")
+                    })
+                },
+                beforeSend: function () {
+                    $("#contenedor_producto").empty(); // <--- LIMPIAR ANTES DE MOSTRAR CARGA
+                    $("#contenedor_producto").LoadingOverlay("show");
+                }
+            });
+        }
+
+        $("#btnAplicarFiltro").click(function () {
+            var _IdCategoria = $("input[name=Categoria]:checked").val();
+            var _IdMarca = $("input[name=Marca]:checked").val();
+            MostrarProductos(_IdCategoria, _IdMarca)
+        })
+
+
+    </script>
+
+}

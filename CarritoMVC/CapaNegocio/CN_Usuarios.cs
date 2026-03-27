@@ -3,6 +3,7 @@ using CapaEntidad;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -88,6 +89,43 @@ namespace CapaNegocio
         public bool Eliminar(int IdUsuario, out string _mensaje)
         {
             return objCapaDato.Eliminar(IdUsuario, out _mensaje);
+        }
+
+        public bool CambiarClave(int IdUsuario, string NuevaClave, out string _mensaje)
+        {
+            return objCapaDato.CambiarClave(IdUsuario, NuevaClave, out _mensaje);
+        }
+
+        public bool ReestablecerClave(int IdUsuario, string Correo, out string _mensaje)
+        {
+            _mensaje = string.Empty;
+            string _nuevaClave = CN_Recursos.GenerarClave();
+            bool _resultado = objCapaDato.ReestablecerClave(IdUsuario, CN_Recursos.ConvertirSha256(_nuevaClave), out _mensaje);
+
+            if (_resultado)
+            {
+                string _asunto = "Contraseña Reestablecida";
+                string _mensaje_correo = "<h3>Su cuenta fue reestablecida correctamente</h3></br><p>Su contraseña para acceder ahora es: !clave!</p>";
+                _mensaje_correo = _mensaje_correo.Replace("!clave!", _nuevaClave);
+
+                bool _respuesta = CN_Recursos.EnviarCorreo(Correo, _asunto, _mensaje_correo);
+
+                if (_respuesta)
+                {
+                    
+                    return true;
+                }
+                else
+                {
+                    _mensaje = "No se pudo reestablecer el correo";
+                    return false;
+                }
+            }
+            else
+            {
+                _mensaje = "No se pudo reestablecer la contraseña";
+                return false;
+            }
         }
     }
 }

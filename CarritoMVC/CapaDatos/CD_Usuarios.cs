@@ -141,5 +141,54 @@ namespace CapaDatos
             }
             return _resultado;
         }
+
+        public bool CambiarClave(int IdUsuario,string NuevaClave, out string _mensaje)
+        {
+            bool _resultado = false;
+            _mensaje = string.Empty;
+            try
+            {
+                using (var _oConexion = new SqlConnection(Conexion.cn))
+                {
+                    var cmd = new SqlCommand("update Usuario set Clave = @NuevaClave, Reestablecer = 0 where IdUsuario = @IdUsuario", _oConexion);
+                    cmd.Parameters.AddWithValue("@IdUsuario", IdUsuario);
+                    cmd.Parameters.AddWithValue("@NuevaClave", NuevaClave);
+                    cmd.CommandType = CommandType.Text;
+                    _oConexion.Open();
+                    _resultado = cmd.ExecuteNonQuery() > 0 ? true : false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _resultado = false;
+                _mensaje = ex.Message;
+            }
+            return _resultado;
+        }
+
+        public bool ReestablecerClave(int IdUsuario, string Clave, out string _mensaje)
+        {
+            bool _resultado = false;
+            _mensaje = string.Empty;
+            try
+            {
+                using (var _oConexion = new SqlConnection(Conexion.cn))
+                {
+                    var cmd = new SqlCommand("update Usuario set Clave = @Clave, Reestablecer = 1 where IdUsuario = @IdUsuario", _oConexion);
+                    cmd.Parameters.AddWithValue("@IdUsuario", IdUsuario);
+                    cmd.Parameters.AddWithValue("@Clave", Clave);
+                    cmd.CommandType = CommandType.Text;
+                    _oConexion.Open();
+                    _resultado = cmd.ExecuteNonQuery() > 0 ? true : false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _resultado = false;
+                _mensaje = ex.Message;
+            }
+            return _resultado;
+        }
+
     }
 }

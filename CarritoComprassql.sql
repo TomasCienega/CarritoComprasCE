@@ -237,6 +237,8 @@ values
 
 select IdUsuario,Nombres,Apellidos,Correo,Clave,Reestablecer,Activo from Usuario
 update Usuario set Activo = 0 where IdUsuario=2
+
+select* from Usuario;
 --------------------------------------------//////SP USUARIO///////-----------------------------------------------------
 
 create procedure sp_RegistrarUsuario
@@ -436,3 +438,378 @@ begin
 end
 
 SELECT * FROM Marca
+
+------------------------------------------------- //SP PRODUCTO//------------------------------------------------------
+
+create procedure sp_RegistrarProducto
+(
+	@Nombre varchar(100),
+	@Descripcion varchar(100),
+	@IdMarca varchar(100),
+	@IdCategoria varchar(100),
+	@Precio decimal(10,2),
+	@Stock int,
+	@Activo bit,
+	@Mensaje varchar(500) output,
+	@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+
+	if not exists (select * from Producto where Nombre = @Nombre)
+
+	begin
+
+		insert into Producto(Nombre,Descripcion,IdMarca,IdCategoria,Precio,Stock,Activo)values
+		(@Nombre,@Descripcion,@IdMarca,@IdCategoria,@Precio,@Stock,@Activo)
+
+		set @Resultado = SCOPE_IDENTITY()
+
+	end
+
+	else
+	set @Mensaje = 'El producto ya existe'	
+	
+end
+
+create procedure sp_EditarProducto
+(
+	@IdProducto int,
+	@Nombre varchar(500),
+	@Descripcion varchar(500),
+	@IdMarca int,
+	@IdCategoria int,
+	@Precio decimal(10,2),
+	@Stock int,
+	@Activo bit,
+	@Mensaje varchar(500) output,
+	@Resultado bit output
+)
+as
+begin
+	set @Resultado = 0
+	if not exists (select * from Producto where Nombre = @Nombre and IdProducto != @IdProducto)
+	begin
+		UPDATE top (1) Producto set
+		Nombre = @Nombre,
+		Descripcion = @Descripcion,
+		IdMarca = @IdMarca,
+		IdCategoria = @IdCategoria,
+		Precio = @Precio,
+		Stock = @Stock,
+		Activo = @Activo
+		where IdProducto = @IdProducto
+
+		set @Resultado = 1
+	end
+	else
+	set @Mensaje = 'El producto ya existe'	
+end
+
+create procedure sp_EliminarProducto
+(
+	@IdProducto int,
+	@Mensaje varchar(500) output,
+	@Resultado bit output
+)
+as
+begin
+	set @Resultado = 0
+	if not exists (select * from Detalle_Venta dv
+	inner join Producto p on p.IdProducto = dv.IdProducto
+	where p.IdProducto = @IdProducto)
+	begin
+		delete top (1) from Producto 
+		where IdProducto = @IdProducto
+
+		set @Resultado = 1
+	end
+	else
+	set @Mensaje = 'El producto se encuentra relacionado a una venta'		
+end
+
+select p.IdProducto,p.Nombre,p.Descripcion,
+m.IdMarca,m.Descripcion[DesMarca],
+c.IdCategoria,c.Descripcion[DesCategoria],
+p.Precio,p.Stock,p.RutaImagen,p.NombreImagen,p.Activo
+from Producto p 
+inner join Marca m on m.IdMarca = p.IdMarca 
+inner join Categoria c on c.IdCategoria = p.IdCategoria
+
+select * from Producto
+
+------------------------------------------------- //SP REPORTES//------------------------------------------------------
+
+create procedure sp_ReporteDashboard
+as
+begin
+	select
+	(select COUNT(*) from Cliente) [TotalCliente],
+	(select ISNULL(SUM(Cantidad),0) from Detalle_Venta) [TotalVenta],
+	(select COUNT(*) from Producto) [TotalProducto]
+end
+exec sp_ReporteDashboard
+
+--------------------------------------- //SP Ventas por Cliente// -----------------------------------------------------
+
+create procedure sp_ReporteVenta
+(
+	@FechaInicio varchar(10),
+	@FechaFin varchar(10),
+	@IdTransaccion varchar(50)
+)
+as
+begin
+
+	set dateformat dmy;
+
+	select CONVERT(char(10),v.FechaVenta,103)[FechaVenta],CONCAT(c.Nombres,' ',c.Apellidos)[Cliente],
+	p.Nombre[Producto],p.Precio,dv.Cantidad,dv.Total,v.IdTransaccion
+	from Detalle_Venta dv
+	inner join Producto p on dv.IdProducto = p.IdProducto
+	inner join Venta v on v.IdVenta = dv.IdVenta
+	inner join Cliente c on c.IdCliente = v.IdCliente
+	where CONVERT(date, v.FechaVenta) between @FechaInicio and @FechaFin
+	and v.IdTransaccion = IIF(@IdTransaccion ='',v.IdTransaccion,@IdTransaccion)
+end
+
+------------------------------------------------- //SP Cliente// ------------------------------------------------------
+
+create procedure sp_RegistrarCliente
+(
+	@Nombres varchar(100),
+	@Apellidos varchar(100),
+	@Correo varchar(100),
+	@Clave varchar(150),
+	@Mensaje varchar(500) output,
+	@Resultado int output
+)
+as
+begin
+	set @Resultado = 0
+	if not exists (select * from Cliente where Correo = @Correo)
+	begin
+
+		insert into Cliente(Nombres,Apellidos,Correo,Clave,Reestablecer)values
+		(@Nombres,@Apellidos,@Correo,@Clave,0)
+
+		set @Resultado = SCOPE_IDENTITY()
+
+	end
+	else
+	set @Mensaje = 'El correo del cliente ya existe'
+end
+
+select * from Cliente
+------------------------------------------- //Select Categoria// ------------------------------------------------------
+
+select distinct m.IdMarca, m.Descripcion from Producto p
+inner join Categoria c on c.IdCategoria = p.IdCategoria
+inner join Marca m on m.IdMarca = p.IdMarca and m.Activo = 1
+where c.IdCategoria = IIF(@IdCategoria = 0,c.IdCategoria,@IdCategoria)
+
+--Es la misma solo con mas validaciones
+select distinct m.IdMarca, m.Descripcion 
+from Producto p
+inner join Categoria c on c.IdCategoria = p.IdCategoria 
+    and c.Activo = 1 -- <--- Validamos que la Categoría esté activa
+inner join Marca m on m.IdMarca = p.IdMarca 
+    and m.Activo = 1 -- <--- Validamos que la Marca esté activa
+where c.IdCategoria = IIF(@IdCategoria = 0, c.IdCategoria, @IdCategoria)
+  and p.Activo = 1 -- <--- (Opcional) Validamos que el Producto esté activo
+
+  select * from Marca
+  select * from Categoria
+  select * from Producto where IdCategoria = 13 and Activo = 1
+
+
+SELECT IdMarca, COUNT(*) as Total 
+FROM Producto 
+GROUP BY IdMarca
+
+INSERT INTO Producto(Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+VALUES 
+('Audífonos Sony XM5', 'Cancelación de ruido líder en la industria', 1, 13, 350.00, 10, 1),
+('Laptop HP Envy', 'Procesador i7 con 16GB de RAM', 2, 13, 1200.00, 5, 1),
+('Monitor LG UltraGear', '27 pulgadas, 144Hz para gaming', 3, 13, 300.00, 8, 1),
+('Laptop Hyundai Thinnote', 'Económica y ligera para oficina', 4, 13, 250.00, 15, 1),
+('Cámara Canon EOS R6', 'Cámara Mirrorless profesional', 5, 13, 2200.00, 3, 1);
+INSERT INTO Producto(Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+VALUES 
+('Juego de Sábanas Premium', 'Algodón egipcio 600 hilos', 6, 15, 80.00, 20, 1),
+('Edredón Térmico', 'Ideal para climas fríos', 6, 15, 120.00, 12, 1);
+INSERT INTO Producto(Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+VALUES ('Mesa de Centro Geek', 'Mesa con luces LED', 1, 14, 150.00, 5, 1)
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, RutaImagen, NombreImagen, Activo)
+VALUES
+-- TECNOLOGÍA (IdCategoria: 13)
+('Sony Bravia 55"', 'Smart TV 4K Ultra HD OLED', 1, 13, 850.00, 15, '', '', 1),
+('Laptop HP Pavilion 15', 'Procesador Ryzen 7, 16GB RAM', 2, 13, 750.00, 10, '', '', 1),
+('Monitor LG 27" Gaming', '144Hz, 1ms, Panel IPS', 3, 13, 299.99, 20, '', '', 1),
+('Tablet Hyundai HyTab', '10 pulgadas, 64GB almacenamiento', 4, 13, 120.00, 25, '', '', 1),
+('Cámara Canon EOS R10', 'Cámara Mirrorless 24.2 MP', 5, 13, 980.00, 5, '', '', 1),
+('Impresora HP LaserJet', 'Impresora láser blanco y negro', 2, 13, 150.00, 12, '', '', 1),
+('Audífonos Sony WH-CH520', 'Inalámbricos con Bluetooth', 1, 13, 59.00, 40, '', '', 1),
+('Smartphone LG K62', 'Pantalla 6.6", 128GB ROM', 3, 13, 180.00, 8, '', '', 1),
+
+-- MUEBLES (IdCategoria: 14)
+('Escritorio para Oficina', 'Madera noble con acabados modernos', 6, 14, 210.00, 7, '', '', 1),
+('Silla Ergonómica Pro', 'Ajuste lumbar y reposacabezas', 6, 14, 185.00, 14, '', '', 1),
+('Estante para Libros HPStyle', 'Estilo industrial madera y metal', 2, 14, 95.00, 10, '', '', 1),
+('Mesa de Centro Minimalista', 'Vidrio templado y base de madera', 6, 14, 130.00, 6, '', '', 1),
+('Sillón Reclinable LG-Confort', 'Cuero sintético negro espacioso', 3, 14, 450.00, 4, '', '', 1),
+
+-- DORMITORIO (IdCategoria: 15)
+('Colchón Queen Size', 'Resortes ensacados y memory foam', 6, 15, 600.00, 5, '', '', 1),
+('Juego de Sábanas Algodón', '600 hilos, King Size, Blanco', 6, 15, 45.00, 30, '', '', 1),
+('Lámpara de Noche SonyLED', 'Luz cálida con puerto USB', 1, 15, 35.00, 22, '', '', 1),
+('Mesa de Noche Moderna', 'Dos cajones, acabado roble', 6, 15, 75.00, 18, '', '', 1),
+('Almohada Ortopédica', 'Espuma con memoria para cuello', 6, 15, 25.00, 50, '', '', 1),
+('Cómoda de 4 Cajones', 'Gran capacidad para ropa', 6, 15, 220.00, 9, '', '', 1),
+
+-- DEPORTES (IdCategoria: 16 - Nota: En tu script dice Activo=0, cámbialo a 1 si quieres probar)
+('Bicicleta de Montaña 29"', 'Frenos de disco y 21 velocidades', 4, 16, 450.00, 3, '', '', 1),
+('Set de Pesas 20kg', 'Mancuernas ajustables de acero', 4, 16, 85.00, 15, '', '', 1),
+('Smartwatch Sony Sport', 'GPS y sensor de ritmo cardíaco', 1, 16, 190.00, 12, '', '', 1),
+('Pelota de Básquet Pro', 'Grip profesional para exteriores', 4, 16, 30.00, 40, '', '', 1),
+
+-- NIÑOS (IdCategoria: 18)
+('Cuna Convertible', 'Madera de pino, se vuelve cama', 6, 18, 320.00, 5, '', '', 1),
+('Tablet Hyundai Kids', 'Protector de silicona azul', 4, 18, 95.00, 15, '', '', 1),
+('Juego de Bloques Construcción', '500 piezas de colores', 6, 18, 40.00, 20, '', '', 1),
+('Cámara Canon Kids Edition', 'Resistente a golpes y agua', 5, 18, 110.00, 10, '', '', 1),
+('Audífonos LG Kids Safe', 'Limitador de volumen integrado', 3, 18, 25.00, 18, '', '', 1),
+('Carrito Montable Hyundai', 'Diseño deportivo para niños', 4, 18, 140.00, 6, '', '', 1),
+('Mochila Escolar Sony Hero', 'Compartimento para tablet', 1, 18, 45.00, 25, '', '', 1);
+
+-------------------------------------------------------------------
+-- 1. NUEVAS CATEGORÍAS (Siguiendo tu identidad 1,1)
+-------------------------------------------------------------------
+INSERT INTO Categoria(Descripcion) 
+VALUES 
+('Electrohogar'),   -- ID 19 (aprox)
+('Cuidado Personal'),-- ID 20
+('Videojuegos'),     -- ID 21
+('Libros y Papelería');-- ID 22
+
+-------------------------------------------------------------------
+-- 2. NUEVAS MARCAS
+-------------------------------------------------------------------
+INSERT INTO Marca(Descripcion) 
+VALUES 
+('SAMSUNGTE'),   -- ID 7
+('PHILIPSTE'),   -- ID 8
+('NINTENDOTE'),  -- ID 9
+('LOGITECHTE'),  -- ID 10
+('MABETE'),      -- ID 11
+('WHIRLPOOLTE'); -- ID 12
+
+-------------------------------------------------------------------
+-- 3. MÁS PRODUCTOS (30+ adicionales para cubrir todo el espectro)
+-------------------------------------------------------------------
+
+-- 1. TECNOLOGIA
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Monitor LG UltraGear', '24 pulgadas 144Hz IPS', m.IdMarca, c.IdCategoria, 280.00, 15, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'LGTE' AND c.Descripcion = 'Tecnologia';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Impresora HP LaserJet', 'Impresión láser blanco y negro', m.IdMarca, c.IdCategoria, 150.00, 10, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'HPTE' AND c.Descripcion = 'Tecnologia';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Cámara Canon EOS R6', 'Mirrorless Profesional 4K', m.IdMarca, c.IdCategoria, 2100.00, 3, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'CANONTE' AND c.Descripcion = 'Tecnologia';
+
+-- 2. MUEBLES
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Escritorio Gamer Pro', 'Madera con soporte para cables', m.IdMarca, c.IdCategoria, 240.00, 8, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'ROBERTA ALLENTE' AND c.Descripcion = 'Muebles';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Mesa de Centro LG-Style', 'Vidrio templado y metal', m.IdMarca, c.IdCategoria, 110.00, 5, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'LGTE' AND c.Descripcion = 'Muebles';
+
+-- 3. DORMITORIO
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Cómoda de 6 Cajones', 'Acabado en roble moderno', m.IdMarca, c.IdCategoria, 320.00, 6, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'ROBERTA ALLENTE' AND c.Descripcion = 'Dormitorio';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Lámpara de Noche Samsung', 'Luz LED con carga inalámbrica', m.IdMarca, c.IdCategoria, 45.00, 20, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'SAMSUNGTE' AND c.Descripcion = 'Dormitorio';
+
+-- 4. DEPORTES
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Bicicleta Hyundai MTB', 'Aro 29 con frenos hidráulicos', m.IdMarca, c.IdCategoria, 550.00, 4, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'HYUNDAITE' AND c.Descripcion = 'Deportes';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Smartwatch Sony Sport', 'GPS y sensor ritmo cardíaco', m.IdMarca, c.IdCategoria, 195.00, 12, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'SONYTE' AND c.Descripcion = 'Deportes';
+
+-- 5. NIÑOS
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Tablet Hyundai Kids', 'Protector anticaídas incluido', m.IdMarca, c.IdCategoria, 95.00, 15, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'HYUNDAITE' AND c.Descripcion = 'Niños';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Cuna convertible Roberta', 'Madera de pino certificada', m.IdMarca, c.IdCategoria, 420.00, 3, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'ROBERTA ALLENTE' AND c.Descripcion = 'Niños';
+
+-- 6. ELECTROHOGAR
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Lavadora Whirlpool 18kg', 'Carga frontal sistema ahorro', m.IdMarca, c.IdCategoria, 890.00, 7, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'WHIRLPOOLTE' AND c.Descripcion = 'Electrohogar';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Cocina Mabe 4 hornillas', 'Acero inoxidable con horno', m.IdMarca, c.IdCategoria, 350.00, 10, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'MABETE' AND c.Descripcion = 'Electrohogar';
+
+-- 7. CUIDADO PERSONAL
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Rasuradora Philips 5000', 'Uso seco y húmedo inalámbrica', m.IdMarca, c.IdCategoria, 85.00, 25, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'PHILIPSTE' AND c.Descripcion = 'Cuidado Personal';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Secadora Philips Pro', 'Motor AC con difusor', m.IdMarca, c.IdCategoria, 60.00, 18, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'PHILIPSTE' AND c.Descripcion = 'Cuidado Personal';
+
+-- 8. VIDEOJUEGOS
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Zelda: Tears of Kingdom', 'Juego físico Nintendo Switch', m.IdMarca, c.IdCategoria, 60.00, 40, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'NINTENDOTE' AND c.Descripcion = 'Videojuegos';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Headset Logitech G733', 'Inalámbrico RGB LightSync', m.IdMarca, c.IdCategoria, 145.00, 12, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'LOGITECHTE' AND c.Descripcion = 'Videojuegos';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Samsung Odyssey G5', 'Monitor Curvo 144Hz 2K', m.IdMarca, c.IdCategoria, 420.00, 6, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'SAMSUNGTE' AND c.Descripcion = 'Videojuegos';
+
+-- 9. LIBROS Y PAPELERIA
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Set Marcadores Canon', 'Impresión de fotos premium', m.IdMarca, c.IdCategoria, 30.00, 50, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'CANONTE' AND c.Descripcion = 'Libros y Papelería';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Agenda Cuero Roberta', 'Diseño exclusivo artesanal', m.IdMarca, c.IdCategoria, 35.00, 100, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'ROBERTA ALLENTE' AND c.Descripcion = 'Libros y Papelería';
+
+-- 10. REFUERZOS ALEATORIOS
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Smartphone Galaxy A54', 'Pantalla 120Hz 5G', m.IdMarca, c.IdCategoria, 450.00, 9, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'SAMSUNGTE' AND c.Descripcion = 'Tecnologia';
+
+INSERT INTO Producto (Nombre, Descripcion, IdMarca, IdCategoria, Precio, Stock, Activo)
+SELECT 'Mouse HP Wireless', 'Sensor óptico ergonómico', m.IdMarca, c.IdCategoria, 25.00, 60, 1
+FROM Marca m, Categoria c WHERE m.Descripcion = 'HPTE' AND c.Descripcion = 'Tecnologia';
+
+select * from Producto
+UPDATE Producto 
+SET RutaImagen = 'C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\FOTOS_CARRITO', 
+    NombreImagen = '2.jpg'  -- <--- IMPORTANTE: Pon el nombre de una foto que SÍ tengas en esa carpeta
+WHERE RutaImagen IS NULL OR RutaImagen = '' OR NombreImagen IS NULL;

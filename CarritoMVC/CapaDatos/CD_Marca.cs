@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -141,5 +142,50 @@ namespace CapaDatos
             }
             return _resultado;
         }
+
+        public List<Marca> ListarMarcaPorCategoria(int IdCategoria)
+        {
+            var _lista = new List<Marca>();
+            try
+            {
+                using (var _oConexion = new SqlConnection(Conexion.cn))
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("select distinct m.IdMarca, m.Descripcion from Producto p");
+                    sb.AppendLine("inner join Categoria c on c.IdCategoria = p.IdCategoria and c.Activo = 1");
+                    sb.AppendLine("inner join Marca m on m.IdMarca = p.IdMarca and m.Activo = 1");
+                    sb.AppendLine("where c.IdCategoria = IIF(@IdCategoria = 0, c.IdCategoria, @IdCategoria) and p.Activo = 1");
+
+                    var cmd = new SqlCommand(sb.ToString(), _oConexion);
+                    cmd.Parameters.AddWithValue("@IdCategoria", IdCategoria);
+                    cmd.CommandType = CommandType.Text;
+
+                    _oConexion.Open();
+
+                    using (var dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            _lista.Add(new Marca()
+                            {
+                                IdMarca = Convert.ToInt32(dr["IdMarca"]),
+                                Descripcion = dr["Descripcion"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                _lista = new List<Marca>();
+            }
+            return _lista;
+        }
     }
 }
+
+
+
+
+
