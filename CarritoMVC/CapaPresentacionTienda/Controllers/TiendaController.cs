@@ -1,5 +1,6 @@
 ﻿using CapaEntidad;
 using CapaNegocio;
+using Microsoft.Ajax.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -86,6 +87,111 @@ namespace CapaPresentacionTienda.Controllers
             var _jsonResult = Json(new { data = _lista }, JsonRequestBehavior.AllowGet);
             _jsonResult.MaxJsonLength = int.MaxValue;
             return _jsonResult;
+        }
+
+        [HttpPost]
+         public JsonResult AgregarCarrito(int IdProducto)
+        {
+            int IdCLiente = ((Cliente)Session["Cliente"]).IdCliente;
+            bool _existe = new CN_Carrito().ExisteCarrito(IdCLiente, IdProducto);
+            bool _respuesta = false;
+            string _mensaje = string.Empty;
+
+            if (_existe)
+            {
+                _mensaje = "El producto ya existe en el carrito";
+            }
+            else
+            {
+                _respuesta = new CN_Carrito().OperacionCarrito(IdCLiente,IdProducto,true, out _mensaje);
+            }
+
+            return Json(new{ respuesta = _respuesta, mensaje = _mensaje }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        public JsonResult CantidadEnCarrito()
+        {
+            int IdCLiente = ((Cliente)Session["Cliente"]).IdCliente;
+            int _cantidad = new CN_Carrito().CantidadEnCarrito(IdCLiente);
+
+            return Json(new { cantidad = _cantidad }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ListarProductosCarrito()
+        {
+            int IdCliente = ((Cliente)Session["Cliente"]).IdCliente;
+            var _oLista = new List<Carrito>();
+            bool _conversion;
+            _oLista = new CN_Carrito().ListarProducto(IdCliente).Select(oc => new Carrito
+            {
+                oProducto = new Producto()
+                {
+                    IdProducto = oc.IdCarrito,
+                    Nombre = oc.oProducto.Nombre,
+                    oMarca = oc.oProducto.oMarca,
+                    Precio = oc.oProducto.Precio,
+                    RutaImagen = oc.oProducto.RutaImagen,
+                    Base64 = CN_Recursos.ConvertitBase64(Path.Combine(oc.oProducto.RutaImagen,oc.oProducto.NombreImagen), out _conversion),
+                },
+                Cantidad = oc.Cantidad
+            }).ToList();
+
+            return Json(new { data = _oLista }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult OperacionCarrito(int IdProducto, bool sumar)
+        {
+            int IdCLiente = ((Cliente)Session["Cliente"]).IdCliente;
+            bool _respuesta = false;
+            string _mensaje = string.Empty;
+
+                _respuesta = new CN_Carrito().OperacionCarrito(IdCLiente, IdProducto, true, out _mensaje);
+
+            return Json(new { respuesta = _respuesta, mensaje = _mensaje }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult EliminarCarrito(int IdProducto)
+        {
+            int IdCLiente = ((Cliente)Session["Cliente"]).IdCliente;
+            bool _respuesta = false;
+            string _mensaje = string.Empty;
+
+            _respuesta = new CN_Carrito().EliminarCarrito(IdCLiente,IdProducto);
+
+            return Json(new { respuesta = _respuesta, mensaje = _mensaje }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ObtenerDepartamento()
+        {
+            var _olista = new List<Departamento>();
+            _olista = new CN_Ubicacion().ObtenerDepartamento();
+            return Json(new { lista = _olista},JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ObtenerProvincia(string IdDepartamento)
+        {
+            var _olista = new List<Provincia>();
+            _olista = new CN_Ubicacion().ObtenerProvincia(IdDepartamento);
+            return Json(new { lista = _olista }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult ObtenerDistrito(string IdProvincia, string IdDepartamento)
+        {
+            var _olista = new List<Distrito>();
+            _olista = new CN_Ubicacion().ObtenerDistrito(IdProvincia, IdDepartamento);
+            return Json(new { lista = _olista }, JsonRequestBehavior.AllowGet);
+        }
+
+        public ActionResult Carrito()
+        {
+            return View();
         }
     }
 }

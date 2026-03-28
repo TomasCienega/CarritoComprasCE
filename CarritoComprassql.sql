@@ -813,3 +813,115 @@ UPDATE Producto
 SET RutaImagen = 'C:\Users\tomas\Downloads\EjerciciosDeProgramacion\CarritoComprasCE\FOTOS_CARRITO', 
     NombreImagen = '2.jpg'  -- <--- IMPORTANTE: Pon el nombre de una foto que SÍ tengas en esa carpeta
 WHERE RutaImagen IS NULL OR RutaImagen = '' OR NombreImagen IS NULL;
+
+
+------------------------------------------- // CARRITO // ------------------------------------------------------
+CREATE procedure sp_ExisteCarrito
+(
+	@IdCliente int,
+	@IdProducto int,
+	@Resultado bit out
+)
+as
+begin
+	if exists(select * from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
+		set @Resultado = 1
+	else
+		set @Resultado = 0
+end
+
+create procedure sp_OperacionCarrito
+(
+	@IdCliente int,
+	@IdProducto int,
+	@Sumar bit,
+	@Mensaje varchar(500) output,
+	@Resultado bit output
+)
+as
+begin
+	set @Resultado = 1
+	set @Mensaje = ''
+	
+	declare @ExisteCarrito bit = iif(exists(select * from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto),1,0)
+	declare @StockProducto int = (select Stock from Producto where IdProducto = @IdProducto)
+	declare @CantidadEnCarrito int = (select Cantidad from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
+
+	begin try
+		begin transaction OPERACION
+		if(@Sumar = 1)
+		begin 
+			if(@StockProducto > 0)
+			begin
+				if(@ExisteCarrito = 1)
+					update Carrito set Cantidad = Cantidad + 1 where IdCliente = @IdCliente and IdProducto = @IdProducto
+				else
+					insert into Carrito(IdCliente,IdProducto,Cantidad)values(@IdCliente,@IdProducto,1)
+				
+				update Producto set Stock = Stock - 1 where IdProducto = @IdProducto
+			end
+			else
+			begin
+				set @Resultado = 0
+				set @Mensaje = 'El producto no cuenta con stock disponible'
+			end
+		end
+		else
+		begin
+			-- MEJORA: Si solo queda 1, lo borramos en lugar de dejarlo en 0
+			if(@CantidadEnCarrito > 1)
+				update Carrito set Cantidad = Cantidad - 1 where IdCliente = @IdCliente and IdProducto = @IdProducto
+			else
+				delete from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto
+			
+			update Producto set Stock = Stock + 1 where IdProducto = @IdProducto
+		end
+		commit transaction OPERACION
+	end try
+	begin catch
+		set @Resultado = 0
+		set @Mensaje = ERROR_MESSAGE()
+		rollback transaction OPERACION
+	end catch
+end
+
+create function fn_ObtenerCarritoCliente
+(
+	@IdCliente int
+)
+returns table
+as
+return
+(
+	select p.IdProducto,m.Descripcion[DesMarca],p.Nombre,p.Precio,c.Cantidad,p.RutaImagen,p.NombreImagen
+	from Carrito c
+	inner join Producto p on p.IdProducto = c.IdProducto
+	inner join Marca m on m.IdMarca = p.IdMarca
+	where c.IdCliente = @IdCliente
+)
+
+create procedure sp_EliminarCarrito
+(
+	@IdCliente int,
+	@IdProducto int,
+	@Resultado bit output
+)
+as
+begin
+	set @Resultado = 1
+	declare @CantidadProducto int = (select Cantidad from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
+
+	begin try
+		begin transaction OPERACION
+
+		update Producto set Stock = Stock + @CantidadProducto where IdProducto = @IdProducto
+		delete top(1) from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto
+
+		commit transaction OPERACION
+
+	end try
+	begin catch
+		set @Resultado = 0
+		rollback transaction OPERACION
+	end catch
+end

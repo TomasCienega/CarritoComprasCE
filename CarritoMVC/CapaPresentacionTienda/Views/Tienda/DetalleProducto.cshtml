@@ -25,7 +25,7 @@
 
                     @if (Session["Cliente"] != null)
                     {
-                        <button class="btn btn-success flex-shrink-0 w-50" type="button" data-IdProducto="@Html.DisplayTextFor(m => m.IdProducto)">
+                        <button class="btn btn-success flex-shrink-0 w-50 AgregarCarrito" type="button" data-idproducto="@Model.IdProducto">
                             <i class="fas fa-cart-plus"></i> Agregar al Carrito
                         </button>
                     }
@@ -35,3 +35,32 @@
         </div>
     </div>
 </section>
+
+@section scripts{
+
+    <script>
+
+
+        // Usamos $(document).on porque el botón se crea dinámicamente
+        $(document).on("click", "button.AgregarCarrito", function () {
+
+            jQuery.ajax({
+                url: "@Url.Action("AgregarCarrito", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdProducto: $(this).data("idproducto") }),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.respuesta) {
+                        MostrarCantidadCarrito();
+                        swal("", "Agregado al Carrito", "success");
+                    } else {
+                        swal("", data.mensaje, "error");
+                    }
+                }
+            });
+        });
+
+    </script>
+
+}
