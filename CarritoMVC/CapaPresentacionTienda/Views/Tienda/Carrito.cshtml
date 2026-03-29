@@ -137,8 +137,7 @@
                                     ),
                                     $("<div>").addClass("col-sm-2 d-grid mt-3 mt-sm-0").append(
                                         $("<button>").addClass("btn btn-outline-danger btn-sm btn-eliminar").append(
-                                            $("<i>").addClass("fas fa-trash-alt me-1"), "Eliminar"
-                                        ),
+                                            $("<i>").addClass("fas fa-trash-alt me-1"), "Eliminar").data("IdProducto", item.oProducto.IdProducto),
                                     )
                                 )
                             )
@@ -240,6 +239,99 @@
             $("#total").data("sumaTotal", sumaTotal)
         }
 
+        $(document).on("click", ".btn-sumar", function () {
+            var div_contenedor = $(this).parent("div.d-flex");
+            var input_cantidad = $(div_contenedor).find("input.input-cantidad");
+            var btn = $(this)
+            var idproducto = $(input_cantidad).data("oProducto").IdProducto;
+
+            jQuery.ajax({
+                url: "@Url.Action("OperacionCarrito", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdProducto: idproducto, Sumar: true }), // Enviamos true para sumar
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    $(btn).LoadingOverlay("hide");
+                    if (data.respuesta) {
+                        // Actualizamos la vista solo si el servidor confirmó
+                        var cantidad = parseInt($(input_cantidad).val()) + 1;
+                        $(input_cantidad).val(cantidad);
+                        sumarTotal();
+                    } else {
+                        // Aquí verás el mensaje real del SP (ej: "No hay stock")
+                        swal("Atención", data.mensaje, "warning");
+                    }
+                },
+                error: function (error) {
+                    console.log("Error en la petición:", error);
+                    $(btn).LoadingOverlay("hide");
+                }, beforeSend: function () {
+                    $(btn).LoadingOverlay("show");
+                }
+
+            }); // <-- Aquí faltaba cerrar el AJAX
+        }); // <-- Aquí faltaba cerrar el evento click
+
+        $(document).on("click", ".btn-restar", function () {
+            var div_contenedor = $(this).parent("div.d-flex");
+            var input_cantidad = $(div_contenedor).find("input.input-cantidad");
+            var btn = $(this)
+            var idproducto = $(input_cantidad).data("oProducto").IdProducto;
+
+            var cantidad_actual = parseInt($(input_cantidad).val());
+
+            // Validamos que no reste si ya es 1 (para eso está el botón eliminar)
+            if (cantidad_actual <= 1) return;
+
+            jQuery.ajax({
+                url: "@Url.Action("OperacionCarrito", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdProducto: idproducto, Sumar: false }), // MANDAMOS FALSE
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    $(btn).LoadingOverlay("hide");
+                    if (data.respuesta) {
+                        var cantidad = cantidad_actual - 1;
+                        $(input_cantidad).val(cantidad);
+                        sumarTotal();
+                    } else {
+                        swal("Error", data.mensaje, "error");
+                    }
+                },
+                error: function (error) {
+                    console.log("Error en la petición:", error);
+                    $(btn).LoadingOverlay("hide");
+                }, beforeSend: function () {
+                    $(btn).LoadingOverlay("show");
+                }
+            });
+        });
+        
+        $(document).on("click", ".btn-eliminar", function () {
+
+            var idproducto = $(this).data("IdProducto");
+            var card_producto = $(this).parents("div.card-producto");
+
+
+            jQuery.ajax({
+                url: "@Url.Action("EliminarCarrito", "Tienda")",
+                type: "POST",
+                data: JSON.stringify({ IdProducto: idproducto}),
+                dataType: "json",
+                contentType: "application/json; charset=utf-8",
+                success: function (data) {
+                    if (data.respuesta) {
+                        card_producto.remove();
+                        MostrarCantidadCarrito();
+                        sumarTotal();
+                    } else {
+                        swal("Error", data.mensaje, "error");
+                    }
+                }
+            });
+        });
     </script>
 
 }

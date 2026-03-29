@@ -128,7 +128,7 @@ namespace CapaPresentacionTienda.Controllers
             {
                 oProducto = new Producto()
                 {
-                    IdProducto = oc.IdCarrito,
+                    IdProducto = oc.oProducto.IdProducto,
                     Nombre = oc.oProducto.Nombre,
                     oMarca = oc.oProducto.oMarca,
                     Precio = oc.oProducto.Precio,
@@ -142,13 +142,13 @@ namespace CapaPresentacionTienda.Controllers
         }
 
         [HttpPost]
-        public JsonResult OperacionCarrito(int IdProducto, bool sumar)
+        public JsonResult OperacionCarrito(int IdProducto, bool Sumar)
         {
             int IdCLiente = ((Cliente)Session["Cliente"]).IdCliente;
             bool _respuesta = false;
             string _mensaje = string.Empty;
 
-                _respuesta = new CN_Carrito().OperacionCarrito(IdCLiente, IdProducto, true, out _mensaje);
+                _respuesta = new CN_Carrito().OperacionCarrito(IdCLiente, IdProducto, Sumar, out _mensaje);
 
             return Json(new { respuesta = _respuesta, mensaje = _mensaje }, JsonRequestBehavior.AllowGet);
         }

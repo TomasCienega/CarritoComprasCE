@@ -900,7 +900,7 @@ return
 	where c.IdCliente = @IdCliente
 )
 
-create procedure sp_EliminarCarrito
+alter procedure sp_EliminarCarrito
 (
 	@IdCliente int,
 	@IdProducto int,
@@ -908,7 +908,7 @@ create procedure sp_EliminarCarrito
 )
 as
 begin
-	set @Resultado = 1
+	set @Resultado = 0
 	declare @CantidadProducto int = (select Cantidad from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto)
 
 	begin try
@@ -916,6 +916,7 @@ begin
 
 		update Producto set Stock = Stock + @CantidadProducto where IdProducto = @IdProducto
 		delete top(1) from Carrito where IdCliente = @IdCliente and IdProducto = @IdProducto
+		set @Resultado = 1
 
 		commit transaction OPERACION
 
