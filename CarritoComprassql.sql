@@ -926,3 +926,75 @@ begin
 		rollback transaction OPERACION
 	end catch
 end
+
+
+------------------------------------------- // REGISTRAR VENTA // ------------------------------------------------------
+
+CREATE TYPE EDetalle_Venta as table
+(
+	IdProducto int null,
+	Cantidad int null,
+	Total decimal(18,2) null
+)
+
+create procedure usp_RegistrarVenta
+(
+	@IdCliente int,
+	@TotalProducto int,
+	@Montototal decimal(18,2),
+	@Contacto varchar(100),
+	@IdDistrito varchar(6),
+	@Telefono varchar(10),
+	@Direccion varchar(100),
+	@IdTransaccion varchar(50),
+	@DetalleVenta [EDetalle_Venta] readonly,
+	@Resultado bit output,
+	@Mensaje varchar(500) output
+)
+as
+begin
+	begin try
+		declare @idventa int = 0
+		set @Resultado = 1
+		set @Mensaje = ''
+
+		begin transaction registro
+
+		insert into Venta(IdCliente,TotalProducto,MontoTotal,Contacto,IdDistrito,Telefono,Direccion,IdTransaccion)
+		values(@IdCliente,@TotalProducto,@Montototal,@Contacto,@IdDistrito,@Telefono,@Direccion,@IdTransaccion)
+
+		set @idventa = SCOPE_IDENTITY()
+
+		insert into Detalle_Venta(IdVenta,IdProducto,Cantidad,Total)
+		select @idventa,IdProducto,Cantidad,Total from @DetalleVenta
+
+		delete from Carrito where IdCliente = @IdCliente
+
+		commit transaction registro
+	end try
+
+	begin catch
+		set @Resultado = 0
+		set @Mensaje = ERROR_MESSAGE()
+		rollback transaction registro
+	end catch
+end
+select * from Cliente
+select * from Venta
+select * from Detalle_Venta
+
+alter function fn_ListarCompra
+(
+	@IdCliente int
+)
+returns table
+as
+return
+(
+	select p.Nombre, p.RutaImagen, p.NombreImagen, p.Precio, dv.Cantidad, dv.Total, v.IdTransaccion 
+	from Detalle_Venta dv
+	inner join Producto p on p.IdProducto = dv.IdProducto
+	inner join Venta v on v.IdVenta = dv.IdVenta
+	where v.IdCliente = @IdCliente
+)
+go
